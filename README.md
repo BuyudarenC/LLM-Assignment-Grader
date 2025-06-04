@@ -18,7 +18,6 @@
 - [安全机制](#-安全机制)
 - [贡献指南](#-贡献指南)
 - [致谢](#-致谢)
-- [许可证](#-许可证)
 
 ---
 
@@ -244,27 +243,6 @@ LLM_auto_homework_check/
 - **自定义评分逻辑**：修改 `llm_utils.py` 中的逻辑实现
 - **扩展格式支持**：更新 `extract.py` 以支持新的报告格式
 
----
-
-## ❓ 常见问题
-
-<details>
-<summary><strong>Q: 支持哪些报告格式？</strong></summary>
-
-目前主要支持 Markdown 格式报告。可通过修改 `extract.py` 扩展支持 Jupyter Notebook、PDF 等格式。
-</details>
-
-<details>
-<summary><strong>Q: 如何更换 LLM 模型？</strong></summary>
-
-在 `llm_utils.py` 中修改模型配置即可。推荐使用 DeepSeek Reasoner 或 GPT-4 系列以获得最佳效果。
-</details>
-
-<details>
-<summary><strong>Q: 批量处理失败怎么办？</strong></summary>
-
-检查：1) API 密钥配置 2) 网络连接状态 3) 学生仓库权限 4) 磁盘空间充足性
-</details>
 
 ---
 
@@ -272,8 +250,8 @@ LLM_auto_homework_check/
 
 感谢以下贡献者对项目的支持：
 
-- [@kal1x](https://github.com/kal1x) - 核心开发与架构设计
-- [@Lime-Cocoa](https://github.com/Lime-Cocoa) - 功能实现与测试优化
+- [@Lime-Cocoa](https://github.com/Lime-Cocoa) - 核心开发与架构设计
+- [@kal1x](https://github.com/kal1x) - 功能实现与测试优化
 
 ---
 
