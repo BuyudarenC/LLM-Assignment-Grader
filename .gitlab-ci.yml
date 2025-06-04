@@ -1,0 +1,20 @@
+stages:
+  - run_prompt_evaluator
+
+prompt_template_update_job:
+  stage: run_prompt_evaluator
+  only:
+    changes:
+      - llm_gen/prompt_template/**
+  script:
+    - cd /opt/2025-pentest
+    - bash ./clone.sh
+    - bash ./branch.sh
+    - echo "$OPENAI_KEY" > "$CI_PROJECT_DIR/llm_gen/openai.key"
+    - cd "$CI_PROJECT_DIR"
+    - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+    - chmod +x main.sh
+    - ./main.sh -t "$CI_PROJECT_DIR/llm_gen/prompt_template" -b /opt/2025-pentest -o /opt/2025-pentest-score
+
+  tags:
+    - 2025-pentest
