@@ -123,12 +123,15 @@ python3 llm_gen/llm_gen.py [选项]
 
 | 参数 | 长参数 | 描述 | 默认值 |
 |------|--------|------|---------|
-| `-b` | `--base-dir` | 仓库基础路径 | `/home/course/2025` |
+| `-b` | `--base-dir` | 仓库基础路径 | `/home/path` |
 | `-o` | `--output-dir` | 输出目录 | `output` |
 | `-c` | `--chapter-id` | 章节标识符 | `0x01` |
-| `-t` | `--template-dir` | 模板目录路径 | `/home/course/2025/zllm/prompt_template` |
+| `-t` | `--template-dir` | 模板目录路径 | `/home/path/prompt_template` |
 | `-s` | `--skip-existing` | 跳过已处理项目 | 默认启用 |
-| `-f` | `--force-reprocess` | 强制重新处理 | - |
+| `-f` | `--force-reprocess` | 强制重新处理 | 默认禁用 |
+| `-i` | `--create-issue` | 在远程仓库创建评语issue | 默认禁用 |
+| | `--gitlab-token` | GitLab API令牌 | 环境变量GITLAB_API_TOKEN |
+| | `--no-skip-existing` | 不跳过已处理的学生 | - |
 
 #### 使用示例
 
@@ -141,6 +144,9 @@ python3 llm_gen/llm_gen.py -b "/custom/path" -o "my_results" -c "0x03"
 
 # 强制重新处理
 python3 llm_gen/llm_gen.py -c "0x01" -f
+
+# 创建GitLab评语issue
+python3 llm_gen/llm_gen.py -c "0x01" -i --gitlab-token "your_token"
 ```
 
 ### 学生仓库批量克隆
@@ -175,6 +181,8 @@ LLM_auto_homework_check/
 │   ├── 📁 fs_utils.py          # 文件系统工具
 │   ├── 🤖 llm_utils.py         # LLM 接口封装
 │   ├── 💬 prompt_utils.py      # 提示词管理
+│   ├── 📊 feedback_utils.py    # 评语生成工具
+│   ├── 🔔 issue_utils.py       # GitLab issue创建工具
 │   └── 📁 prompt_template/     # 评分模板库
 ├── 🔧 clone.sh                 # 仓库克隆脚本
 ├── 🌿 branch.sh                # 分支处理脚本

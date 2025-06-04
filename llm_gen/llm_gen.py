@@ -2,11 +2,14 @@ import json
 from pathlib import Path
 from typing import Optional, Tuple
 import argparse
+import os
 from loguru import logger
 from extract import find_and_merge_markdown
 from llm_utils import query_deepseek_v3, query_qwen3
 from fs_utils import get_directory_structure, get_git_history, find_directories_by_pattern
 from prompt_utils import generate_prompt_from_template, get_prompt_template_path, save_prompt_to_file, parse_llm_response
+from feedback_utils import extract_feedback
+from issue_utils import create_feedback_issue
 from datetime import datetime
 
 def extract_student_report(student_dir: Path, 
@@ -67,7 +70,8 @@ def process_student(student_dir: Path,
                    output_dir: Path,
                    assignment_id: str,
                    prompt_template_path: Path,
-                   skip_md_extraction: bool = False) -> bool:
+                   skip_md_extraction: bool = False,
+                   create_issue: bool = False) -> bool:
     """
     处理单个学生的完整流程
     
@@ -77,6 +81,7 @@ def process_student(student_dir: Path,
         assignment_id: 作业ID (如 "0x01")
         prompt_template_path: 提示词模板路径
         skip_md_extraction: 是否跳过MD提取步骤（如果已存在MD文件）
+        create_issue: 是否创建issue
     
     Returns:
         处理是否成功
@@ -119,6 +124,11 @@ def process_student(student_dir: Path,
         # 后续步骤的输出文件路径
         prompt_path = md_file_path.parent / f"{assignment_id}_prompt.txt"
         json_path = md_file_path.parent / f"{assignment_id}.json"
+        feedback_path = md_file_path.parent / f"{assignment_id}_feedback.md"
+        
+        # 检查评语文件是否已存在
+        feedback_exists = feedback_path.exists()
+        json_exists = json_path.exists()
         
         # 第二步: 获取目录结构
         if assignment_dir:
@@ -130,6 +140,38 @@ def process_student(student_dir: Path,
             # 如果没有找到作业目录，使用占位符
             tree_structure = "未能找到作业目录，无法获取目录结构"
             git_history = "未能找到作业目录，无法获取Git历史"
+        
+        # 如果JSON文件已存在但评语文件不存在，只生成评语文件
+        if json_exists and not feedback_exists:
+            try:
+                logger.info(f"学生 {student_name} 的JSON文件已存在但评语文件不存在，生成评语文件")
+                feedback = extract_feedback(json_path)
+                with open(feedback_path, 'w', encoding='utf-8') as f:
+                    f.write(feedback)
+                logger.success(f"已生成评语文件: {feedback_path}")
+                
+                # 如果需要创建issue
+                if create_issue and assignment_dir:
+                    logger.info(f"正在为学生 {student_name} 创建评语issue...")
+                    issue_created = create_feedback_issue(
+                        git_dir=str(assignment_dir),
+                        student_name=student_name,
+                        chapter_id=assignment_id,
+                        feedback_content=feedback
+                    )
+                    if issue_created:
+                        logger.success(f"已成功创建评语issue")
+                    else:
+                        logger.warning(f"创建评语issue失败")
+                return True
+            except Exception as e:
+                logger.error(f"生成评语文件时出错: {e}")
+                return False
+        
+        # 如果JSON和评语文件都已存在，直接返回成功
+        if json_exists and feedback_exists:
+            logger.info(f"学生 {student_name} 的JSON和评语文件都已存在，跳过处理")
+            return True
         
         # 第四步: 生成完整提示词
         prompt = generate_prompt_from_template(
@@ -158,6 +200,30 @@ def process_student(student_dir: Path,
                     json.dump(response_obj, f, ensure_ascii=False, indent=2)
                 
                 logger.success(f"已生成评分结果: {json_path}")
+                
+                # 生成评语文件
+                try:
+                    feedback = extract_feedback(json_path)
+                    with open(feedback_path, 'w', encoding='utf-8') as f:
+                        f.write(feedback)
+                    logger.success(f"已生成评语文件: {feedback_path}")
+                    
+                    # 如果需要创建issue
+                    if create_issue and assignment_dir:
+                        logger.info(f"正在为学生 {student_name} 创建评语issue...")
+                        issue_created = create_feedback_issue(
+                            git_dir=str(assignment_dir),
+                            student_name=student_name,
+                            chapter_id=assignment_id,
+                            feedback_content=feedback
+                        )
+                        if issue_created:
+                            logger.success(f"已成功创建评语issue")
+                        else:
+                            logger.warning(f"创建评语issue失败")
+                except Exception as e:
+                    logger.error(f"生成评语文件时出错: {e}")
+                
                 return True
             except Exception as e:
                 logger.error(f"保存JSON时出错: {e}")
@@ -181,7 +247,8 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
                           chapter_id: str = '0x01',
                           template_base_dir: str = '/home/OS-Fuzz/2025/zllm/prompt_template',
                           skip_existing: bool = True,
-                          force_reprocess: bool = False):
+                          force_reprocess: bool = False,
+                          create_issue: bool = False):
     """
     批量处理所有学生
     
@@ -192,6 +259,7 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
         template_base_dir: 提示词模板基础目录
         skip_existing: 是否跳过已经处理过的学生
         force_reprocess: 强制重新处理所有步骤（即使文件已存在）
+        create_issue: 是否在远程仓库创建issue
     
     Returns:
         成功处理的学生数量
@@ -233,34 +301,67 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
         student_output_dir = output_path / student_name
         md_file_path = student_output_dir / f"{chapter_id}.md"
         json_file_path = student_output_dir / f"{chapter_id}.json"
-        prompt_file_path = student_output_dir / f"{chapter_id}_prompt.txt"
+        feedback_file_path = student_output_dir / f"{chapter_id}_feedback.md"
         
         # 如果强制重新处理，跳过所有检查
         if force_reprocess:
-            if process_student(student_dir, output_path, chapter_id, template_path, False):
+            if process_student(student_dir, output_path, chapter_id, template_path, False, create_issue):
                 successful_processes += 1
             continue
             
         # 检查文件是否存在
         md_exists = md_file_path.exists()
         json_exists = json_file_path.exists()
+        feedback_exists = feedback_file_path.exists()
         
-        # 情况1: 同时存在MD和JSON，完全跳过
-        if skip_existing and md_exists and json_exists:
-            logger.info(f"跳过学生 {student_name}: 已完成全部处理 (MD和JSON文件都存在)")
+        # 情况1: 所有文件都存在，完全跳过
+        if skip_existing and md_exists and json_exists and feedback_exists:
+            logger.info(f"跳过学生 {student_name}: 已完成全部处理 (MD、JSON和评语文件都存在)")
             skipped_students += 1
             continue
             
-        # 情况2: 只有MD文件，跳过提取步骤，继续后续处理
+        # 情况2: 有MD和JSON但没有评语，只处理评语
+        if md_exists and json_exists and not feedback_exists:
+            logger.info(f"学生 {student_name}: 仅生成评语文件")
+            try:
+                feedback = extract_feedback(json_file_path)
+                with open(feedback_file_path, 'w', encoding='utf-8') as f:
+                    f.write(feedback)
+                logger.success(f"已生成评语文件: {feedback_file_path}")
+                
+                # 如果需要创建issue
+                if create_issue:
+                    # 查找作业目录
+                    found_assignments = find_directories_by_pattern(student_dir, chapter_id)
+                    if found_assignments:
+                        assignment_dir = found_assignments[0]
+                        logger.info(f"正在为学生 {student_name} 创建评语issue...")
+                        issue_created = create_feedback_issue(
+                            git_dir=assignment_dir,
+                            student_name=student_name,
+                            chapter_id=chapter_id,
+                            feedback_content=feedback
+                        )
+                        if issue_created:
+                            logger.success(f"已成功创建评语issue")
+                        else:
+                            logger.warning(f"创建评语issue失败")
+                
+                successful_processes += 1
+                continue
+            except Exception as e:
+                logger.error(f"生成评语文件时出错: {e}")
+            
+        # 情况3: 只有MD文件，跳过提取步骤，继续后续处理
         if md_exists and not json_exists:
             logger.info(f"学生 {student_name}: MD文件存在但没有JSON，继续后续步骤")
-            if process_student(student_dir, output_path, chapter_id, template_path, True):
+            if process_student(student_dir, output_path, chapter_id, template_path, True, create_issue):
                 partial_processed += 1
                 successful_processes += 1
             continue
             
-        # 情况3: 从头开始处理
-        if process_student(student_dir, output_path, chapter_id, template_path, False):
+        # 情况4: 从头开始处理
+        if process_student(student_dir, output_path, chapter_id, template_path, False, create_issue):
             successful_processes += 1
     
     # 输出统计信息
@@ -284,8 +385,16 @@ if __name__ == "__main__":
                         help='不跳过已处理的学生')
     parser.add_argument('-f', '--force-reprocess', action='store_true', default=False,
                         help='强制重新处理所有步骤 (默认: False)')
+    parser.add_argument('-i', '--create-issue', action='store_true', default=False,
+                        help='在远程仓库创建评语issue (默认: False)')
+    parser.add_argument('--gitlab-token', type=str, 
+                        help='GitLab API令牌 (也可通过GITLAB_API_TOKEN环境变量提供)')
     
     args = parser.parse_args()
+    
+    # 设置GitLab API令牌（如果提供）
+    if args.gitlab_token:
+        os.environ['GITLAB_API_TOKEN'] = args.gitlab_token
     
     # 执行批量处理
     batch_process_students(
@@ -294,5 +403,6 @@ if __name__ == "__main__":
         chapter_id=args.chapter_id,
         template_base_dir=args.template_dir,
         skip_existing=args.skip_existing,
-        force_reprocess=args.force_reprocess
+        force_reprocess=args.force_reprocess,
+        create_issue=args.create_issue
     ) 
