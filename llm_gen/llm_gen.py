@@ -243,10 +243,10 @@ def process_student(student_dir: Path,
         logger.error(f"处理学生 {student_dir.name} 时出错: {e}")
         return False
 
-def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
+def batch_process_students(base_dir: str = '/home/course/2025',
                           output_dir: str = 'output',
                           chapter_id: str = '0x01',
-                          template_base_dir: str = '/home/OS-Fuzz/2025/zllm/prompt_template',
+                          template_base_dir: str = './prompt_template',
                           skip_existing: bool = True,
                           force_reprocess: bool = False,
                           create_issue: bool = False,
@@ -393,14 +393,14 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
 if __name__ == "__main__":
     # 使用argparse处理命令行参数
     parser = argparse.ArgumentParser(description='批量处理学生作业报告')
-    parser.add_argument('-b', '--base-dir', type=str, default='/home/OS-Fuzz/2025',
-                        help='学生目录的基础路径 (默认: /home/OS-Fuzz/2025)')
+    parser.add_argument('-b', '--base-dir', type=str, default='/home/course/2025',
+                        help='学生目录的基础路径 (默认: /home/course/2025)')
     parser.add_argument('-o', '--output-dir', type=str, default='output',
                         help='输出目录 (默认: output)')
     parser.add_argument('-c', '--chapter-id', type=str, default='0x01',
                         help='章节ID (默认: 0x01)')
-    parser.add_argument('-t', '--template-dir', type=str, default='/home/OS-Fuzz/2025/zllm/prompt_template',
-                        help='提示词模板基础目录 (默认: /home/OS-Fuzz/2025/zllm/prompt_template)')
+    parser.add_argument('-t', '--template-dir', type=str, default='/home/course/2025/prompt_template',
+                        help='提示词模板基础目录 (默认: /home/course/2025/prompt_template)')
     parser.add_argument('-s', '--skip-existing', action='store_true', default=True,
                         help='跳过已处理的学生 (默认: True)')
     parser.add_argument('--no-skip-existing', dest='skip_existing', action='store_false',

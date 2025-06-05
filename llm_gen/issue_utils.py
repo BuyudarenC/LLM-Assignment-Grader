@@ -9,7 +9,7 @@ from urllib.parse import urlparse, quote_plus
 class GitLabIssueCreator:
     """用于在GitLab仓库中创建issue的工具类"""
     
-    def __init__(self, api_token=None, api_url="https://git.cuc.edu.cn/api/v4"):
+    def __init__(self, api_token=None, api_url="https://git.xxx.edu.cn/api/v4"):
         """
         初始化GitLab API连接
         
@@ -34,7 +34,7 @@ class GitLabIssueCreator:
         从仓库URL获取GitLab项目ID
         
         Args:
-            repo_url: 仓库URL，例如 https://git.cuc.edu.cn/ccs/2025-penetration/username.git
+            repo_url: 仓库URL，例如 https://git.xxx.edu.cn/course/2025-penetration/username.git
             
         Returns:
             项目ID或None（如果无法获取）
