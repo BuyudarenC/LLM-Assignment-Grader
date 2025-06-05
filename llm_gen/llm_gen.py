@@ -10,6 +10,7 @@ from fs_utils import get_directory_structure, get_git_history, find_directories_
 from prompt_utils import generate_prompt_from_template, get_prompt_template_path, save_prompt_to_file, parse_llm_response
 from feedback_utils import extract_feedback
 from issue_utils import create_feedback_issue
+from extract_scores import process_all_scores
 from datetime import datetime
 
 def extract_student_report(student_dir: Path, 
@@ -248,7 +249,9 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
                           template_base_dir: str = '/home/OS-Fuzz/2025/zllm/prompt_template',
                           skip_existing: bool = True,
                           force_reprocess: bool = False,
-                          create_issue: bool = False):
+                          create_issue: bool = False,
+                          generate_stats: bool = False,
+                          name_mapping_file: Optional[str] = None):
     """
     批量处理所有学生
     
@@ -260,13 +263,16 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
         skip_existing: 是否跳过已经处理过的学生
         force_reprocess: 强制重新处理所有步骤（即使文件已存在）
         create_issue: 是否在远程仓库创建issue
+        generate_stats: 是否生成分数统计
+        name_mapping_file: 包含学生拼音名到中文名映射的Excel文件路径
     
     Returns:
         成功处理的学生数量
     """
     # 设置日志
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    logger.add(f"{chapter_id}_{timestamp}.log", rotation="10 MB")
+    log_file = f"{chapter_id}_{timestamp}.log"
+    logger.add(log_file, rotation="10 MB")
     logger.info(f"开始批量处理 {chapter_id} 章节作业")
     
     # 确保输出目录存在
@@ -366,6 +372,22 @@ def batch_process_students(base_dir: str = '/home/OS-Fuzz/2025',
     
     # 输出统计信息
     logger.info(f"批量处理完成, 共处理 {total_students} 名学生, 跳过 {skipped_students} 名, 部分处理 {partial_processed} 名, 全部成功 {successful_processes} 名")
+    
+    # 生成分数统计（如果需要）
+    if generate_stats:
+        logger.info("开始生成分数统计...")
+        stats_csv = f"{chapter_id}_{timestamp}_scores.csv"
+        scores, csv_path = process_all_scores(
+            output_dir=output_dir,
+            assignment_id=chapter_id,
+            output_csv=stats_csv,
+            log_file=log_file
+        )
+        if csv_path:
+            logger.success(f"分数统计已保存到: {csv_path}")
+        else:
+            logger.warning("分数统计生成失败")
+    
     return successful_processes
 
 if __name__ == "__main__":
@@ -389,6 +411,8 @@ if __name__ == "__main__":
                         help='在远程仓库创建评语issue (默认: False)')
     parser.add_argument('--gitlab-token', type=str, 
                         help='GitLab API令牌 (也可通过GITLAB_API_TOKEN环境变量提供)')
+    parser.add_argument('--stats', action='store_true', default=False,
+                        help='生成分数统计 (默认: False)')
     
     args = parser.parse_args()
     
@@ -404,5 +428,7 @@ if __name__ == "__main__":
         template_base_dir=args.template_dir,
         skip_existing=args.skip_existing,
         force_reprocess=args.force_reprocess,
-        create_issue=args.create_issue
+        create_issue=args.create_issue,
+        generate_stats=args.stats,
+        name_mapping_file=args.name_mapping
     ) 
