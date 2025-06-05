@@ -237,6 +237,6 @@ prompt_template/
 
 <div align='center'>
     <img src="./imgs/star-history-202565.png" alt="Datawhale" width="90%">
-</div>omework_check&Date)
+</div>
 
 **如果这个项目对您有帮助，请考虑给我们一个 ⭐**
