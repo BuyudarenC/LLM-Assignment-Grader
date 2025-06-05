@@ -216,9 +216,6 @@ prompt_template/
 
 ---
 
-
----
-
 ## 🙏 致谢
 
 核心贡献者：
@@ -238,7 +235,8 @@ prompt_template/
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LLM_auto_homework_check/LLM_auto_homework_check&type=Date)](https://www.star-history.com/#LLM_auto_homework_check/LLM_auto_homework_check&Date)
-<div align="center">
+<div align='center'>
+    <img src="./imgs/star-history-202565.png" alt="Datawhale" width="90%">
+</div>omework_check&Date)
 
 **如果这个项目对您有帮助，请考虑给我们一个 ⭐**
