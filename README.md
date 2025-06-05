@@ -1,6 +1,6 @@
 <div align='center'>
     <img src="./imgs/head.png" alt="alt text" width="100%">
-    <h1>LLM-auto-homework-check</h1>
+    <h1>LLM-Assignment-Grader</h1>
 </div>
 
 <div align="center">
