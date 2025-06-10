@@ -1,5 +1,5 @@
 <div align='center'>
-    <img src="./imgs/head.png" alt="alt text" width="100%">
+    <img src="./imgs/head1.jpg" alt="alt text" width="100%">
     <h1>LLM-Assignment-Grader</h1>
 </div>
 
