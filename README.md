@@ -236,7 +236,7 @@ prompt_template/
 ## Star History
 
 <div align='center'>
-    <img src="./imgs/star-history-202565.png" alt="Datawhale" width="90%">
+    <img src="./imgs/star-history-2025610.png" alt="Datawhale" width="90%">
 </div>
 
 **如果这个项目对您有帮助，请考虑给我们一个 ⭐**
