@@ -226,6 +226,8 @@ prompt_template/
 
 - [kal1x](https://github.com/kal1x) 
 
+- [dangyuyan](https://github.com/dangyuyan)
+
 <div align=center style="margin-top: 30px;">
   <a href="https://github.com/BuyudarenC/LLM_auto_homework_check/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=BuyudarenC/LLM_auto_homework_check" />
